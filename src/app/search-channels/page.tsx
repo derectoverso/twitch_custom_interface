@@ -44,20 +44,27 @@ export default function SearchChannelsPage() {
         />
       )}
       <div className="p-4 flex flex-col" style={{ minHeight: '200px' }}>
+        {/* Main content */}
         <div>
           <h3 className="font-bold text-xl mb-2">{channel.display_name}</h3>
           <p className="text-gray-300 mb-2">{channel.game_name}</p>
           <p className="text-sm text-gray-400 line-clamp-2">{channel.title}</p>
         </div>
+  
+        {/* Language row */}
+        {channel.is_live && (
+          <div className="mt-4 pb-2 border-b border-[#2d2d2d]">
+            <span className="text-gray-300">
+              🌐 {channel.broadcaster_language.toUpperCase()}
+            </span>
+          </div>
+        )}
+  
+        {/* Status and stats row */}
         <div className="mt-auto flex items-center justify-between">
           <span className={`${channel.is_live ? 'text-red-500' : 'text-gray-500'}`}>
             {channel.is_live ? '🔴 Live' : '⚫ Offline'}
           </span>
-          {channel.is_live && (
-            <span className="text-gray-300">
-              👥 {channel.broadcaster_language}
-            </span>
-          )}
           <span className="text-gray-300">
             ❤️ {channel.follower_count?.toLocaleString() ?? '0'}
           </span>
