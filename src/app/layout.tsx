@@ -1,13 +1,18 @@
+// src/app/layout.tsx
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ReactQueryProvider } from '@/lib/query-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Twitch Stream Dashboard',
+  title: 'Twitch Dashboard',
   description: 'Multi-stream Twitch dashboard',
+  icons: {
+    icon: '/twitch_icon.png',
+    shortcut: '/twitch_icon.png',
+    apple: '/twitch_icon.png',
+  },
 }
 
 export default function RootLayout({
@@ -17,10 +22,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ReactQueryProvider>
-          {children}
-        </ReactQueryProvider>
+      <body className={`${inter.className} bg-[#1A1A1A]`}>
+        {children}
       </body>
     </html>
   )
