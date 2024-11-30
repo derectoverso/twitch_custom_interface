@@ -50,7 +50,6 @@ export const searchChannels = async (query: string, first: number = 20) => {
     const params = {
       query,
       first,
-      live_only: true
     };
 
     console.log('🔍 Twitch API Request:', {
@@ -71,12 +70,19 @@ export const searchChannels = async (query: string, first: number = 20) => {
         params
       });
       
+      const sortedChannels = response.data.data.sort((a: any, b: any) => {
+        if (a.is_live && !b.is_live) return -1;
+        if (!a.is_live && b.is_live) return 1;
+        return b.follower_count - a.follower_count;
+      });
+
       console.log('✅ Twitch API Response:', {
         status: response.status,
-        resultCount: response.data.data.length
+        resultCount: sortedChannels.length,
+        liveChannels: sortedChannels.filter((c: any) => c.is_live).length
       });
       
-      return response.data.data;
+      return sortedChannels;
     } catch (error) {
       console.error('❌ Failed to search channels:', error);
       throw error;
