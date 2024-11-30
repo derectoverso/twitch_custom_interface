@@ -32,10 +32,17 @@ const ChannelGrid = ({ channel }: { channel: any }) => {
 
   const handleChannelClick = () => {
     const channelName = channel.broadcaster_login;
+    const queryParams = new URLSearchParams({
+      avatar: channel.thumbnail_url,
+      title: channel.title,
+      game: channel.game_name,
+      tags: channel.tags?.join(',') || '',
+    }).toString();
+  
     if (channel.is_live) {
-      router.push(`/channel/${channelName}/live`);
+      router.push(`/channel/${channelName}/live?${queryParams}`);
     } else {
-      router.push(`/channel/${channelName}`);
+      router.push(`/channel/${channelName}?${queryParams}`);
     }
   };
 
