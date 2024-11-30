@@ -41,3 +41,44 @@ export const fetchTwitchStreams = async (gameId?: string, userName?: string) => 
     throw error;
   }
 };
+
+
+export const searchChannels = async (query: string, first: number = 20) => {
+    const accessToken = await getTwitchAccessToken();
+    
+    const url = 'https://api.twitch.tv/helix/search/channels';
+    const params = {
+      query,
+      first,
+      live_only: true
+    };
+
+    console.log('🔍 Twitch API Request:', {
+      url,
+      params,
+      headers: {
+        'Authorization': `Bearer ${accessToken.slice(0, 10)}...`, // Only log part of the token for security
+        'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
+      }
+    });
+    
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
+        },
+        params
+      });
+      
+      console.log('✅ Twitch API Response:', {
+        status: response.status,
+        resultCount: response.data.data.length
+      });
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Failed to search channels:', error);
+      throw error;
+    }
+  };
