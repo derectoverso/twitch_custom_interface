@@ -42,49 +42,46 @@ export const fetchTwitchStreams = async (gameId?: string, userName?: string) => 
   }
 };
 
-
-export const searchChannels = async (query: string, first: number = 20) => {
+export const searchChannels = async (query: string) => {
     const accessToken = await getTwitchAccessToken();
     
-    const url = 'https://api.twitch.tv/helix/search/channels';
-    const params = {
-      query,
-      first,
-    };
-
-    console.log('🔍 Twitch API Request:', {
-      url,
-      params,
-      headers: {
-        'Authorization': `Bearer ${accessToken.slice(0, 10)}...`, // Only log part of the token for security
-        'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
-      }
-    });
-    
     try {
-      const response = await axios.get(url, {
+      const channelsResponse = await axios.get('https://api.twitch.tv/helix/search/channels', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
         },
-        params
+        params: { query }
       });
-      
-      const sortedChannels = response.data.data.sort((a: any, b: any) => {
-        if (a.is_live && !b.is_live) return -1;
-        if (!a.is_live && b.is_live) return 1;
-        return b.follower_count - a.follower_count;
-      });
-
-      console.log('✅ Twitch API Response:', {
-        status: response.status,
-        resultCount: sortedChannels.length,
-        liveChannels: sortedChannels.filter((c: any) => c.is_live).length
-      });
-      
-      return sortedChannels;
+  
+      // Get additional data for live channels
+      const liveChannelLogins = channelsResponse.data.data
+        .filter((channel: any) => channel.is_live)
+        .map((channel: any) => channel.broadcaster_login);
+  
+      if (liveChannelLogins.length > 0) {
+        const streamsResponse = await axios.get('https://api.twitch.tv/helix/streams', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
+          },
+          params: { user_login: liveChannelLogins }
+        });
+  
+        // Merge stream data with channel data
+        const streamData = new Map(
+          streamsResponse.data.data.map((stream: any) => [stream.user_login, stream])
+        );
+  
+        return channelsResponse.data.data.map((channel: any) => ({
+          ...channel,
+          streamData: streamData.get(channel.broadcaster_login) || null
+        }));
+      }
+  
+      return channelsResponse.data.data;
     } catch (error) {
-      console.error('❌ Failed to search channels:', error);
+      console.error('Failed to fetch channels', error);
       throw error;
     }
   };

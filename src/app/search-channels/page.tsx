@@ -31,47 +31,100 @@ export default function SearchChannelsPage() {
   const liveChannels = channels?.filter(channel => channel.is_live) || [];
   const offlineChannels = channels?.filter(channel => !channel.is_live) || [];
 
-  const ChannelGrid = ({ channel }: { channel: any }) => (
-    <div 
-      key={channel.id} 
-      className="bg-[#3d3d3d] rounded-lg overflow-hidden hover:bg-[#484848] transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl"
-    >
-      {channel.thumbnail_url && (
-        <img 
-          src={channel.thumbnail_url} 
-          alt={channel.display_name}
-          className="w-full h-48 object-cover"
-        />
-      )}
-      <div className="p-4 flex flex-col" style={{ minHeight: '200px' }}>
-        {/* Main content */}
-        <div>
-          <h3 className="font-bold text-xl mb-2">{channel.display_name}</h3>
-          <p className="text-gray-300 mb-2">{channel.game_name}</p>
-          <p className="text-sm text-gray-400 line-clamp-2">{channel.title}</p>
-        </div>
+  const ChannelGrid = ({ channel }: { channel: any }) => {
+    // Format duration
+    const formatDuration = (startTime: string) => {
+      const start = new Date(startTime);
+      const now = new Date();
+      const duration = now.getTime() - start.getTime();
+      const hours = Math.floor(duration / (1000 * 60 * 60));
+      const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    };
+    
+    // Format time to match Twitch style (e.g., "08:27:08")
+    const formatStartTime = (startTime: string) => {
+      return new Date(startTime).toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+    
+    // Format viewers to match Twitch style (e.g., "377")
+    const formatViewers = (count: number) => {
+      return count.toLocaleString();
+    };
   
-        {/* Language row */}
-        {channel.is_live && (
-          <div className="mt-4 pb-2 border-b border-[#2d2d2d]">
-            <span className="text-gray-300">
-              🌐 {channel.broadcaster_language.toUpperCase()}
+    return (
+      <div 
+        key={channel.id} 
+        className="bg-[#3d3d3d] rounded-lg overflow-hidden hover:bg-[#484848] transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl"
+      >
+        {channel.thumbnail_url && (
+          <img 
+            src={channel.thumbnail_url} 
+            alt={channel.display_name}
+            className="w-full h-48 object-cover"
+          />
+        )}
+        <div className="p-4 flex flex-col" style={{ minHeight: '200px' }}>
+          {/* Main content */}
+          <div>
+            <h3 className="font-bold text-xl mb-2">{channel.display_name}</h3>
+            <p className="text-gray-300 mb-2">{channel.game_name}</p>
+            <p className="text-sm text-gray-400 line-clamp-2">{channel.title}</p>
+          </div>
+  
+          {/* Tags row */}
+          {channel.tags && channel.tags.length > 0 && (
+            <div className="mt-4 pb-2 border-b border-[#2d2d2d]">
+              <div className="flex flex-wrap gap-2">
+                {channel.tags.map((tag: string, index: number) => (
+                  <span 
+                    key={index}
+                    className="text-xs bg-[#2d2d2d] text-gray-300 px-2 py-1 rounded"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+  
+          {/* Language row */}
+          {channel.broadcaster_language && (
+            <div className="mt-2 pb-2 border-b border-[#2d2d2d]">
+              <span className="text-gray-300">
+                🌐 {channel.broadcaster_language.toUpperCase()}
+              </span>
+            </div>
+          )}
+  
+          {/* Stream info for live channels */}
+          {channel.is_live && channel.streamData && (
+            <div className="mt-2 pb-2 border-b border-[#2d2d2d]">
+              <div className="flex items-center justify-between text-gray-300 text-sm">
+                <span>🕛 {formatStartTime(channel.streamData.started_at)}</span>
+                <span>⌛ {formatDuration(channel.streamData.started_at)}</span>
+                <span>👀 {formatViewers(channel.streamData.viewer_count)}</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Status and stats row */}
+          <div className="mt-auto flex items-center justify-between">
+            <span className={`${channel.is_live ? 'text-red-500' : 'text-gray-500'}`}>
+              {channel.is_live ? '🔴 Live' : '⚫ Offline'}
+            </span>
+            <span className="text-gray-300 flex items-center">
+              🎮 {channel.game_name || 'No Game'}
             </span>
           </div>
-        )}
-  
-        {/* Status and stats row */}
-        <div className="mt-auto flex items-center justify-between">
-          <span className={`${channel.is_live ? 'text-red-500' : 'text-gray-500'}`}>
-            {channel.is_live ? '🔴 Live' : '⚫ Offline'}
-          </span>
-          <span className="text-gray-300">
-            ❤️ {channel.follower_count?.toLocaleString() ?? '0'}
-          </span>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] p-6 text-white">
