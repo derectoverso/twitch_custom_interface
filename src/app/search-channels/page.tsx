@@ -1,24 +1,21 @@
 // src/app/search-channels/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchChannels } from '@/lib/twitch-api';
+import { useSearchParams } from 'next/navigation';
+import SearchBar from '@/components/SearchBar';
 
-type SearchType = 'title' | 'game' | 'channel';
+type SearchType = 'channel' | 'title' | 'game';
 
 export default function SearchChannelsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [searchType, setSearchType] = useState<SearchType>('channel');
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+  const initialType = (searchParams.get('type') as SearchType) || 'channel';
   
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [searchType, setSearchType] = useState<SearchType>(initialType);
 
   const { data: channels, isLoading, error } = useQuery({
     queryKey: ['searchChannels', debouncedQuery, searchType],
@@ -26,77 +23,71 @@ export default function SearchChannelsPage() {
     enabled: debouncedQuery.length > 0,
   });
 
+  const handleSearch = (query: string, type: SearchType) => {
+    setDebouncedQuery(query);
+    setSearchType(type);
+  };
+
   return (
-    <div className="min-h-screen bg-purple-600 p-6 text-white">
+    <div className="min-h-screen bg-[#1A1A1A] p-6 text-white">
       <h1 className="text-3xl font-bold mb-6">Search Channels</h1>
       
-      <div className="flex gap-4 mb-8">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search..."
-          className="flex-1 px-4 py-2 rounded-lg bg-purple-700 text-white placeholder-purple-300 border border-purple-500 focus:outline-none focus:border-purple-400"
+      <div className="mb-8">
+        <SearchBar 
+          initialQuery={initialQuery}
+          initialSearchType={searchType}
+          onSearch={handleSearch}
+          className="w-full max-w-3xl mx-auto"
         />
-        
-        <select
-          value={searchType}
-          onChange={(e) => setSearchType(e.target.value as SearchType)}
-          className="px-4 py-2 rounded-lg bg-purple-700 text-white border border-purple-500 focus:outline-none focus:border-purple-400"
-        >
-          <option value="channel">Search by Channel</option>
-          <option value="title">Search by Title</option>
-          <option value="game">Search by Game</option>
-        </select>
       </div>
 
       {isLoading && (
-        <div className="text-center text-purple-200">Searching channels...</div>
+        <div className="text-center text-gray-400">Searching channels...</div>
       )}
 
       {error && (
-        <div className="text-center text-red-300">Error searching channels. Please try again.</div>
+        <div className="text-center text-red-400">Error searching channels. Please try again.</div>
       )}
 
-      {channels && channels.length === 0 && searchQuery && (
-        <div className="text-center py-8 bg-purple-700/50 rounded-lg">
-            <p className="text-xl text-purple-200">No channels found for "{searchQuery}"</p>
+      {channels && channels.length === 0 && debouncedQuery && (
+        <div className="text-center py-8 bg-[#3d3d3d] rounded-lg">
+          <p className="text-xl text-gray-300">No channels found for "{debouncedQuery}"</p>
         </div>
-        )}
+      )}
 
-    {channels && channels.length > 0 && (
+      {channels && channels.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {channels.map((channel: any) => (
+          {channels.map((channel: any) => (
             <div 
-                key={channel.id} 
-                className="bg-purple-700 rounded-lg overflow-hidden hover:bg-purple-800 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl"
+              key={channel.id} 
+              className="bg-[#3d3d3d] rounded-lg overflow-hidden hover:bg-[#484848] transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:shadow-xl"
             >
-                {channel.thumbnail_url && (
+              {channel.thumbnail_url && (
                 <img 
-                    src={channel.thumbnail_url} 
-                    alt={channel.display_name}
-                    className="w-full h-48 object-cover"
+                  src={channel.thumbnail_url} 
+                  alt={channel.display_name}
+                  className="w-full h-48 object-cover"
                 />
-                )}
-                <div className="p-4">
+              )}
+              <div className="p-4">
                 <h3 className="font-bold text-xl mb-2">{channel.display_name}</h3>
-                <p className="text-purple-200 mb-2">{channel.game_name}</p>
-                <p className="text-sm text-purple-300 line-clamp-2">{channel.title}</p>
+                <p className="text-gray-300 mb-2">{channel.game_name}</p>
+                <p className="text-sm text-gray-400 line-clamp-2">{channel.title}</p>
                 <div className="mt-4 flex items-center gap-4">
-                    <span className="text-purple-200">
+                  <span className="text-gray-300">
                     {channel.is_live ? '🔴 Live' : '⚫ Offline'}
+                  </span>
+                  {channel.is_live && (
+                    <span className="text-gray-300">
+                      👥 {channel.broadcaster_language}
                     </span>
-                    {channel.is_live && (
-                    <span className="text-purple-200">
-                        👥 {channel.broadcaster_language}
-                    </span>
-                    )}
+                  )}
                 </div>
-                </div>
+              </div>
             </div>
-            ))}
+          ))}
         </div>
-    )}
+      )}
     </div>
   );
 }
